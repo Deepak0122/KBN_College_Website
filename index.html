@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KBN College — Modern Website with Virtual Tour & AI Chatbot</title>
+
+  <link rel="icon" type="image/png" href="assets/kbn-logo.png" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- AOS (Animate On Scroll) -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- tsParticles -->
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+
+  <!-- Lottie -->
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+  <style>
+    :root {
+      --accent1: #3b82f6;
+      --accent2: #8b5cf6;
+      --muted: #9ca3af;
+      --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(180deg, #071124 0%, #0f172a 100%);
+      color: #e6eef8;
+    }
+
+    #tsparticles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .gradient-text {
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(8px);
+    }
+
+    .logo-muted {
+      filter: saturate(0.85) brightness(0.97) contrast(0.98);
+    }
+
+    /* 3D Carousel */
+    .carousel { position: relative; width: 100%; max-width: 900px; height: 420px; margin: 0 auto; perspective: 1600px; }
+    .carousel__container {
+      position: absolute; width: 100%; height: 100%; transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(.22, .9, .24, 1);
+    }
+    .carousel__item {
+      position: absolute; width: 62%; height: 72%; top: 14%; left: 19%;
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.7);
+      backface-visibility: hidden;
+    }
+    .carousel__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Caption on Hover */
+    .carousel__item::after {
+      content: attr(data-caption);
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      padding: 8px 0;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .carousel__item:hover::after { opacity: 1; }
+
+    .carousel__item:nth-child(1) { transform: rotateY(0deg) translateZ(480px); }
+    .carousel__item:nth-child(2) { transform: rotateY(60deg) translateZ(480px); }
+    .carousel__item:nth-child(3) { transform: rotateY(120deg) translateZ(480px); }
+    .carousel__item:nth-child(4) { transform: rotateY(180deg) translateZ(480px); }
+    .carousel__item:nth-child(5) { transform: rotateY(240deg) translateZ(480px); }
+    .carousel__item:nth-child(6) { transform: rotateY(300deg) translateZ(480px); }
+
+    /* Chatbot */
+    .chat-toggle {
+      position: fixed; right: 24px; bottom: 24px; z-index: 60;
+      width: 64px; height: 64px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6); cursor: pointer;
+    }
+
+    .chat-window {
+      position: fixed; right: 24px; bottom: 100px; z-index: 70;
+      width: 360px; max-height: 70vh; display: none;
+      flex-direction: column; border-radius: 12px; overflow: hidden;
+    }
+
+    .chat-window .header { padding: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .chat-window .messages { padding: 12px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .msg { padding: 10px 12px; border-radius: 10px; max-width: 80%; }
+    .msg.user { align-self: flex-end; background: linear-gradient(90deg, #0ea5e9, #7c3aed); color: #fff; }
+    .msg.bot { align-self: flex-start; background: rgba(255, 255, 255, 0.05); color: #d7e7ff; }
+
+    @media (max-width: 640px) {
+      nav { flex-direction: column; text-align: center; gap: 10px; }
+      .chat-window { width: 90%; right: 5%; }
+      .carousel { height: 320px; }
+      .carousel__item { width: 80%; left: 10%; }
+    }
+	/* 🌟 Glowing KBN Logo Animation */
+@keyframes glowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(139,92,246,0.8)) brightness(1.1);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(59,130,246,0.9)) brightness(1.3);
+    transform: scale(1.06);
+  }
+}
+.animate-glow {
+  animation: glowPulse 3s ease-in-out infinite;
+  transition: transform 0.3s ease;
+}
+
+/* ✨ Floating Sparkles around Logo */
+.particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+  top: var(--y);
+  left: var(--x);
+  opacity: 0.8;
+  animation: sparkleFloat 5s ease-in-out infinite alternate;
+}
+@keyframes sparkleFloat {
+  0% { transform: translateY(0px) scale(0.8); opacity: 0.8; }
+  50% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(10px) scale(0.7); opacity: 0.6; }
+}
+/* 🌟 Slow bounce for department icons */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-bounce-slow {
+  animation: bounceSlow 3s infinite ease-in-out;
+}
+/* ✨ Glowing Pulse Animation for Achievements */
+@keyframes pulseGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 15px rgba(139,92,246,0.6)) brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(59,130,246,0.9)) brightness(1.2);
+    transform: scale(1.05);
+  }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+/* 🌀 Smooth bounce for icons */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-bounce-slow {
+  animation: bounceSlow 3s infinite ease-in-out;
+}
+
+
+  </style>
+</head>
+<body>
+  <div id="tsparticles"></div>
+
+  <!-- Navbar -->
+  <nav class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="assets/kbn-logo.png" alt="KBN College Logo" class="w-12 h-12 rounded-md logo-muted" />
+      <div>
+        <div class="font-semibold text-sm">Kakaraparti Bhavanarayana College</div>
+        <div class="text-xs text-gray-400">Vijayawada, Andhra Pradesh</div>
+      </div>
+    </div>
+    <div class="hidden md:flex gap-6 text-sm text-gray-400">
+      <a href="#about" class="hover:text-white">About</a>
+      <a href="#departments" class="hover:text-white">Departments</a>
+      <a href="#gallery" class="hover:text-white">Gallery</a>
+      <a href="#achievements" class="hover:text-white">Achievements</a>
+	  <a href="#why-kbn" class="hover:text-white">Why KBN?</a>
+      <a href="#contact" class="hover:text-white">Contact</a>
+    </div>
+  </nav>
+
+<!-- 🎓 Hero Section with Glowing KBN Logo Animation -->
+<section class="relative overflow-hidden pt-10 min-h-[80vh] flex items-center">
+  <!-- Background Video -->
+  <video autoplay muted loop playsinline id="heroVideo" class="absolute inset-0 w-full h-full object-cover opacity-40">
+    <source src="assets/campus_bg.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-[#071124cc] to-[#0f172acc]"></div>
+
+  <!-- Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12">
+    
+    <!-- Left Content -->
+    <div class="flex-1" data-aos="fade-right">
+      <div class="glass p-6 rounded-2xl">
+        <h1 class="text-4xl md:text-5xl font-bold gradient-text mb-4">
+          KBN College — Empowering Future Innovators
+        </h1>
+        <p class="text-gray-300 mb-6">
+          A center for academic excellence, research, and holistic development. 
+          Vibrant campus, world-class faculty, and future-ready programs.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href="#departments"
+             class="px-5 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:scale-105 transition-transform">
+            Explore Departments
+          </a>
+          <a href="#gallery"
+             class="px-5 py-3 rounded-full border border-white/10 text-white glass hover:scale-105 transition-transform">
+            Campus Gallery
+          </a>
+          <a href="https://youtu.be/_Y0V2HopPV0" target="_blank"
+             class="px-5 py-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg flex items-center gap-2 hover:scale-105 transition-transform">
+            🎥 Virtual Tour
+          </a>
+        </div>
+		<!-- Live Stats Section -->
+<div class="flex flex-wrap gap-10 mt-10 text-center">
+  <div class="flex-1">
+    <h2 id="stat-years" class="text-4xl font-extrabold gradient-text">117</h2>
+    <p class="text-gray-400 text-sm mt-2">Years of Excellence</p>
+  </div>
+  <div class="flex-1">
+    <h2 id="stat-placement" class="text-4xl font-extrabold gradient-text">511</h2>
+    <p class="text-gray-400 text-sm mt-2">Students Placed</p>
+  </div>
+  <div class="flex-1">
+    <h2 id="stat-programs" class="text-4xl font-extrabold gradient-text">25</h2>
+    <p class="text-gray-400 text-sm mt-2">Programs Offered</p>
+  </div>
+</div>
+
+      </div>
+    </div>
+
+    <!-- Right: Glowing Animated KBN Logo -->
+    <div class="flex-1 flex justify-center items-center relative" data-aos="fade-left">
+      <!-- Glowing Aura -->
+      <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-blue-600 via-purple-600 to-pink-500 blur-3xl opacity-40 animate-pulse"></div>
+
+      <!-- Logo with Glow Animation -->
+      <div class="relative">
+        <img src="assets/kbn- logo.jpg" alt="KBN Logo" class="w-52 h-52 rounded-full border-4 border-white/20 shadow-lg animate-glow">
+
+        <!-- Sparkles -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="particle" style="--x:15%;--y:25%;"></div>
+          <div class="particle" style="--x:70%;--y:20%;"></div>
+          <div class="particle" style="--x:40%;--y:80%;"></div>
+          <div class="particle" style="--x:60%;--y:60%;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+  <!-- About KBN College -->
+<section id="about" class="max-w-6xl mx-auto px-6 py-16" data-aos="fade-up">
+  <div class="glass p-8 rounded-2xl">
+    <h3 class="text-3xl font-semibold gradient-text mb-4">About KBN College</h3>
+
+    <p class="text-gray-300 leading-relaxed mb-4">
+      <strong class="text-white">Kakaraparti Bhavanarayana College (Autonomous)</strong> 
+      is a distinguished institution and one of the best outcomes of a century-old illustrious charitable organization, 
+      <strong class="text-white">S.K.P.V.V. Hindu High Schools Society</strong>, which for the last 
+      <strong class="text-white">117 years</strong> has been providing exceptional education through its eight reputable academic institutions.
+    </p>
+
+    <p class="text-gray-300 leading-relaxed mb-4">
+      It is one of the pioneering educational institutions in Vijayawada run with the motto 
+      <span class="text-yellow-400 font-semibold">"TEJASWINAVADHITAMASTU"</span>, 
+      which means <span class="italic text-blue-400">"May our Study be Enlightening".</span>
+    </p>
+
+    <p class="text-gray-300 leading-relaxed">
+      The college is known for its perseverance and commitment to 
+      <span class="text-purple-400 font-medium">academic excellence</span> 
+      and <span class="text-pink-400 font-medium">value-based holistic education.</span>
+    </p>
+
+    <!-- Buttons -->
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="#departments" 
+         class="px-5 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:scale-105 transition-transform">
+        Know More
+      </a>
+      <a href="https://kbncollege.ac.in/index" target="_blank"
+         class="px-5 py-3 rounded-full border border-white/10 text-white glass hover:scale-105 transition-transform">
+        Visit Official Site
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Departments Section -->
+<section id="departments" class="max-w-7xl mx-auto px-6 py-20" data-aos="fade-up">
+  <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 gradient-text">
+    Explore Our Departments
+  </h2>
+  <p class="text-center text-gray-400 max-w-2xl mx-auto mb-12">
+    KBN College offers diverse programs designed to shape future-ready professionals through
+    innovation, research, and practical learning.
+  </p>
+
+  <div class="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-8">
+    <!-- Department Card -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]">
+      <div class="flex justify-center mb-4">
+        <img src="assets/icons/software-application.png" alt="AI Department" class="w-14 h-14 animate-bounce-slow">
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-2">BCA (Hons) - Computer
+	  Applications</h3>
+      <p class="text-gray-400 text-sm">Cutting-edge AI, ML, and Deep Learning technologies for real-world applications.</p>
+    </div>
+
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
+      <div class="flex justify-center mb-4">
+        <img src="assets/icons/computer.png" alt="Data Science" class="w-14 h-14 animate-bounce-slow">
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-2">B.Sc (Hons) - Data Science</h3>
+      <p class="text-gray-400 text-sm">Empowering students with statistical, analytical, and programming expertise.</p>
+    </div>
+
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(236,72,153,0.5)]">
+      <div class="flex justify-center mb-4">
+        <img src="assets/icons/computer.png" alt="Computer Science" class="w-14 h-14 animate-bounce-slow">
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-2">B.Sc (Hons) - Computer Science</h3>
+      <p class="text-gray-400 text-sm">Core programming, database, and software development for industry readiness.</p>
+    </div>
+
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
+      <div class="flex justify-center mb-4">
+        <img src="assets/icons/online-analytical.png" alt="Business Administration" class="w-14 h-14 animate-bounce-slow">
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-2">BBA (Hons) - Business Administration</h3>
+      <p class="text-gray-400 text-sm">Leadership, innovation, and entrepreneurship training for future business leaders.</p>
+    </div>
+
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(20,184,166,0.5)]">
+      <div class="flex justify-center mb-4">
+        <img src="assets/icons/target.png" alt="Commerce" class="w-14 h-14 animate-bounce-slow">
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-2">B.Com (Hons) - Commerce</h3>
+      <p class="text-gray-400 text-sm">Accounting, finance, and taxation with digital business insights.</p>
+    </div>
+
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(34,197,94,0.5)]">
+      <div class="flex justify-center mb-4">
+        <img src="assets/icons/business.png" alt="Biotechnology" class="w-14 h-14 animate-bounce-slow">
+      </div>
+      <h3 class="text-xl font-semibold text-white mb-2">B.Sc (Hons) - Biotechnology</h3>
+      <p class="text-gray-400 text-sm">Integrating biology and technology to revolutionize medical and agricultural fields.</p>
+    </div>
+  </div>
+</section>
+<!-- Achievements Section -->
+<section id="achievements" class="max-w-7xl mx-auto px-6 py-20" data-aos="fade-up">
+  <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 gradient-text">
+    College Achievements 🏆
+  </h2>
+
+  <p class="text-center text-gray-400 max-w-2xl mx-auto mb-12">
+    Celebrating our journey of excellence — from student success to national recognition.  
+    These milestones reflect KBN College’s dedication to quality education and innovation.
+  </p>
+
+  <div class="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-8">
+    <!-- Card 1 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]">
+      <img src="assets/achievements/1.jpg" alt="NAAC Accreditation" class="w-20 h-20 mx-auto mb-4 animate-pulse-glow">
+      <h3 class="text-xl font-semibold text-white mb-2">NAAC Accredited with A++ Grade</h3>
+      <p class="text-gray-400 text-sm">Awarded A++ by NAAC with a CGPA of 3.53 — a mark of educational excellence and innovation.</p>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
+      <img src="assets/achievements/2.jpg" alt="Startup Innovation" class="w-20 h-20 mx-auto mb-4 animate-pulse-glow">
+      <h3 class="text-xl font-semibold text-white mb-2">Innovation & Startup Recognition</h3>
+      <p class="text-gray-400 text-sm">Recognized as a hub for innovation under the Ministry of Education’s IIC initiative.</p>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(34,197,94,0.5)]">
+      <img src="assets/achievements/4.webp" alt="Placements" class="w-20 h-20 mx-auto mb-4 animate-pulse-glow">
+      <h3 class="text-xl font-semibold text-white mb-2">511+ Placements in 2025</h3>
+      <p class="text-gray-400 text-sm">Outstanding campus recruitment drive with top companies like TCS, Infosys & Wipro.</p>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
+      <img src="assets/achievements/6.webp" alt="Research Publications" class="w-20 h-20 mx-auto mb-4 animate-pulse-glow">
+      <h3 class="text-xl font-semibold text-white mb-2">50+ Research Publications</h3>
+      <p class="text-gray-400 text-sm">Faculty & students actively publish in national and international journals.</p>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(236,72,153,0.5)]">
+      <img src="assets/achievements/5.png" alt="National Events" class="w-20 h-20 mx-auto mb-4 animate-pulse-glow">
+      <h3 class="text-xl font-semibold text-white mb-2">National Level Tech Fest</h3>
+      <p class="text-gray-400 text-sm">Hosts “CodeSpark” & “InnoVision” — nationwide hackathons and technical expos.</p>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(20,184,166,0.5)]">
+      <img src="assets/achievements/3.webp" alt="Community Service" class="w-20 h-20 mx-auto mb-4 animate-pulse-glow">
+      <h3 class="text-xl font-semibold text-white mb-2">Community Impact</h3>
+      <p class="text-gray-400 text-sm">Through NSS & NCC, students contribute actively to social and environmental causes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Why Choose KBN College Section -->
+<section id="why-kbn" class="max-w-7xl mx-auto px-6 py-20" data-aos="fade-up">
+  <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 gradient-text">
+    Why Choose KBN College?
+  </h2>
+
+  <p class="text-center text-gray-400 max-w-2xl mx-auto mb-12">
+    Discover what makes KBN College one of Andhra Pradesh’s most trusted and forward-thinking institutions for higher education.
+  </p>
+
+  <div class="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-8">
+    <!-- Card 1 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
+      <img src="assets/why/education.png" alt="Academic Excellence" class="w-14 h-14 mx-auto mb-4 animate-bounce-slow">
+      <h3 class="text-xl font-semibold text-white mb-2">Academic Excellence</h3>
+      <p class="text-gray-400 text-sm">A legacy of 117+ years in education with top-tier faculty and outcome-based learning.</p>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]">
+      <img src="assets/why/target.png" alt="Placement Support" class="w-14 h-14 mx-auto mb-4 animate-bounce-slow">
+      <h3 class="text-xl font-semibold text-white mb-2">Excellent Placements</h3>
+      <p class="text-gray-400 text-sm">Strong placement cell with 500+ students placed in top companies annually.</p>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(20,184,166,0.5)]">
+      <img src="assets/why/microscope.png" alt="Research Focus" class="w-14 h-14 mx-auto mb-4 animate-bounce-slow">
+      <h3 class="text-xl font-semibold text-white mb-2">Research & Innovation</h3>
+      <p class="text-gray-400 text-sm">Dedicated R&D wing fostering innovation through AI labs, hackathons, and industry tie-ups.</p>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]">
+      <img src="assets/why/university.png" alt="Infrastructure" class="w-14 h-14 mx-auto mb-4 animate-bounce-slow">
+      <h3 class="text-xl font-semibold text-white mb-2">World-Class Infrastructure</h3>
+      <p class="text-gray-400 text-sm">Smart classrooms, digital library, computer labs, and green eco-friendly campus.</p>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(236,72,153,0.5)]">
+      <img src="assets/why/marching-band.png" alt="Campus Life" class="w-14 h-14 mx-auto mb-4 animate-bounce-slow">
+      <h3 class="text-xl font-semibold text-white mb-2">Vibrant Campus Life</h3>
+      <p class="text-gray-400 text-sm">Cultural fests, clubs, NSS, NCC, and student leadership programs that inspire growth.</p>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="glass p-6 rounded-2xl text-center hover:scale-105 transition-all hover:shadow-[0_0_25px_rgba(34,197,94,0.5)]">
+      <img src="assets/why/medal.png" alt="Scholarships" class="w-14 h-14 mx-auto mb-4 animate-bounce-slow">
+      <h3 class="text-xl font-semibold text-white mb-2">Scholarships & Support</h3>
+      <p class="text-gray-400 text-sm">Merit-based scholarships, government aid, and mentorship for holistic development.</p>
+    </div>
+  </div>
+</section>
+
+
+  <!-- Gallery -->
+  <section id="gallery" class="max-w-6xl mx-auto px-6 py-16" data-aos="fade-up">
+    <h3 class="text-2xl font-semibold gradient-text text-center mb-8">Campus Gallery</h3>
+    <div class="carousel" id="carouselWrap">
+      <div class="carousel__container" id="carousel">
+        <div class="carousel__item" data-caption="Vibrant Campus Life">
+          <img src="assets/Screenshot 2025-10-23 231149.png" alt="Campus Life" loading="lazy">
+        </div>
+        <div class="carousel__item" data-caption="Cultural Fest">
+          <img src="assets/CULTURAL_WALL.webp" alt="Cultural Event" loading="lazy">
+        </div>
+        <div class="carousel__item" data-caption="International Seminar">
+          <img src="assets/gallery_item3_1.webp" alt="Seminar Event" loading="lazy">
+        </div>
+        <div class="carousel__item" data-caption="Guest Lecture">
+          <img src="assets/gallery_item12_1.webp" alt="Lecture Event" loading="lazy">
+        </div>
+        <div class="carousel__item" data-caption="Placement Achievements">
+          <img src="assets/PLACEMENT_SLIDE_2025.webp" alt="Placements 2025" loading="lazy">
+        </div>
+        <div class="carousel__item" data-caption="Campus View">
+          <img src="assets/gallery_item2_1.webp" alt="Campus View"
+		  loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="max-w-6xl mx-auto px-6 py-16" data-aos="fade-up">
+    <div class="glass p-8 rounded-2xl grid md:grid-cols-2 gap-8 items-start">
+      <div>
+        <h3 class="text-2xl font-semibold gradient-text mb-2">Get in Touch</h3>
+        <p class="text-gray-400 mb-4">For admissions, partnerships, or campus visits — reach us.</p>
+        <p><strong>Email:</strong> info@kbncollege.ac.in</p>
+        <p><strong>Phone:</strong> +91 91829 07747</p>
+        <p><strong>Address:</strong> Vijayawada, Andhra Pradesh</p>
+      </div>
+      <form onsubmit="event.preventDefault(); alert('Message sent!');" class="space-y-3">
+        <input class="w-full p-3 rounded-md bg-transparent border border-white/10" placeholder="Your name" required>
+        <input class="w-full p-3 rounded-md bg-transparent border border-white/10" placeholder="Email" required>
+        <textarea rows="4" class="w-full p-3 rounded-md bg-transparent border border-white/10" placeholder="Message" required></textarea>
+        <button class="px-5 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <footer class="text-center py-6 text-gray-400">
+    © <span id="year"></span> KBN College. All Rights Reserved.
+  </footer>
+
+  <!-- Chatbot -->
+  <button id="chatToggle" class="chat-toggle">💬</button>
+  <div id="chatWindow" class="chat-window glass">
+    <div class="header">
+      <img src="assets/kbn-logo.png" alt="Logo" class="w-8 h-8 logo-muted rounded" />
+      KBN Assistant
+      <button id="chatClose" class="ml-auto text-gray-400">✕</button>
+    </div>
+    <div class="messages" id="messages">
+      <div class="msg bot">Hi! I'm the KBN Assistant. Ask about admissions, placements or campus life.</div>
+    </div>
+    <div class="flex p-2 border-t border-white/10">
+      <input id="chatInput" class="flex-1 bg-transparent text-white border border-white/10 rounded px-2 py-1" placeholder="Type here..." />
+      <button id="chatSend" class="ml-2 bg-gradient-to-r from-blue-600 to-purple-600 px-3 rounded">Send</button>
+    </div>
+  </div>
+
+  <script>
+    AOS.init({ duration: 900, once: true });
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    tsParticles.load("tsparticles", {
+      fullScreen: { enable: false },
+      particles: {
+        number: { value: 60 },
+        color: { value: ["#3b82f6","#8b5cf6","#06b6d4"] },
+        move: { enable: true, speed: 1 },
+        opacity: { value: 0.5 },
+        size: { value: 3 },
+      },
+    });
+
+    // Auto-rotating 3D carousel
+    const carousel = document.getElementById('carousel');
+    let angle = 0;
+    setInterval(() => {
+      angle -= 60;
+      carousel.style.transform = `rotateY(${angle}deg)`;
+    }, 4000);
+
+    // Chatbot
+    const chatToggle = document.getElementById("chatToggle");
+    const chatWindow = document.getElementById("chatWindow");
+    const chatClose = document.getElementById("chatClose");
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("chatInput");
+    const send = document.getElementById("chatSend");
+
+    chatToggle.onclick = () => chatWindow.style.display = "flex";
+    chatClose.onclick = () => chatWindow.style.display = "none";
+
+    function appendMessage(text, who="bot") {
+      const msg = document.createElement("div");
+      msg.className = `msg ${who}`;
+      msg.textContent = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    send.onclick = () => {
+      const val = input.value.trim();
+      if (!val) return;
+      appendMessage(val, "user");
+      input.value = "";
+      setTimeout(() => {
+        const t = val.toLowerCase();
+        if (t.includes("admission")) appendMessage("Admissions open in June 2026. Visit campus or apply online.");
+        else if (t.includes("placement")) appendMessage("95% placement rate with top recruiters like TCS & Infosys!");
+        else if (t.includes("event")) appendMessage("Our Tech Fest will be held on Feb 20–22, 2026!");
+        else appendMessage("I'm here to help! Try asking about admissions, placements, or events.");
+      }, 800);
+    };
+  </script>
+</body>
+</html>
